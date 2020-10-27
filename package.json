@@ -1,0 +1,20 @@
+{
+  "name": "Ethereum Playground",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.1.1",
+    "hdkey": "^2.0.1",
+    "openzeppelin-solidity": "^2.5.1"
+  }
+}
