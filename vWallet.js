@@ -9,7 +9,8 @@ const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 // Type conversion
 const parseBytes = (hexString) => {
-  return Uint8Array.from(Buffer.from(hexString, 'hex'))
+  // return Uint8Array.from(Buffer.from(hexString, 'hex'))
+  return '0x' + hexString
 }
 
 let provider = new HDWalletProvider(mnemonic, 'https://kovan.infura.io/v3/50acc159b78a4261be428f5534707279')
@@ -27,13 +28,15 @@ let signature = signingKey.sign(uI8)
 let coinCoverR = signature.slice(0, 32)
 let coinCoverS = signature.slice(32, 64)
 
-let abi = JSON.parse(fs.readFileSync('ABI/IVWallet.abi'))
+console.log(coinCoverR.toString('hex'), coinCoverS.toString('hex'))
+
+let abi = JSON.parse(fs.readFileSync('ABI/IVBase.abi'))
 let vWallet = new web3.eth.Contract(abi, recoveryData.vWalletAddress)
 
 // Combine with Vesto signature
 let vArray = [recoveryData.vestoV, 28]
-let rArray = [parseBytes(recoveryData.vestoR), Uint8Array.from(coinCoverR)]
-let sArray = [parseBytes(recoveryData.vestoS), Uint8Array.from(coinCoverS)]
+let rArray = [parseBytes(recoveryData.vestoR), parseBytes(coinCoverR.toString('hex'))]
+let sArray = [parseBytes(recoveryData.vestoS), parseBytes(coinCoverS.toString('hex'))]
 let nonceBytes = parseBytes(recoveryData.nonce)
 
 // Just to check we're talking to the contract...
@@ -52,7 +55,7 @@ vWallet.methods
     rArray,
     sArray
   )
-  .send({from: ''}) // address of first Metamask account
+  .send({from: '0x43A0e3D7bF73911a3FcCB92362B649De90750dF4'}) // address of first Metamask account
   .then(o => console.log(o))
   .catch(e => console.log('Problems: ' + e))
 
