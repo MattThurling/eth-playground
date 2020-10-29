@@ -20,9 +20,8 @@ let xPrv = process.argv[3]
 let recoveryData = JSON.parse(fs.readFileSync(fileName))
 
 let signingKey = hdkey.fromExtendedKey(xPrv)
-let signingPrivateKey = signingKey.privateKey
 
-let wallet = new ethers.Wallet('0x' + '0438702781f69f7b42050bc2ee0cbf83463f8403c1d01699d167ae45718b5a8ec54a5a2d80c9')
+let wallet = new ethers.Wallet('0x' + signingKey._hdkey.privateKey.toString('hex'))
 console.log(wallet)
 
 hashBytes = ethers.utils.arrayify('0x' + recoveryData.hash)
