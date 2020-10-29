@@ -1,0 +1,9 @@
+{
+  "vWalletAddress": "0x5ae2fe76262eba6cf68eaf2ed684739cbc317fb5",
+  "newUserAddress": "0xe7c32e4d190ef3f0fdf2f2b01a9f8d6da78b9058",
+  "nonce": "eb1348ba3d38db267f1a054a16be8a402cb6d7d8de1294a9dbf5225a027365d5",
+  "hash": "3072f2a7b4ffc0c35bb40d7546c707d07346676354aa53e00ad3296cb539ac7a",
+  "vestoV": 27,
+  "vestoR": "c07d9c96a955d9ce3129fa94389e26d9f29b5efabb6e60de382ba3af63a9dfc9",
+  "vestoS": "03037fea208c8c0478bc87ac8b5944c2251029ea4fa0c006dabce30c663b970c"
+}
