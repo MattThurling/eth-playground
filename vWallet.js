@@ -1,16 +1,16 @@
 // Dependencies
 const fs = require('fs')
-const Web3 = require('web3')
 const { hdkey } = require('ethereumjs-wallet')
-const ethers = require('ethers')
+const { ethers } = require('ethers')
+
+// Set up access to Ethereum network
+const provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io/v3/50acc159b78a4261be428f5534707279')
 
 // Use Metamask accounts for sending the call
 const mnemonic = fs.readFileSync('seed/mnemonic.txt', 'utf8')
-const HDWalletProvider = require('@truffle/hdwallet-provider')
 
 // Type conversion
 const parseBytes = (hexString) => {
-  // return Uint8Array.from(Buffer.from(hexString, 'hex'))
   return '0x' + hexString
 }
 
@@ -19,23 +19,30 @@ let fileName = process.argv[2]
 let xPrv = process.argv[3]
 let recoveryData = JSON.parse(fs.readFileSync(fileName))
 
+// Get the private key from the HD key
 let signingKey = hdkey.fromExtendedKey(xPrv)
 
-let wallet = new ethers.Wallet('0x' + signingKey._hdkey.privateKey.toString('hex'))
-console.log(wallet)
+// Set up the wallet for signing
+let signingWallet = new ethers.Wallet('0x' + signingKey._hdkey.privateKey.toString('hex'))
 
-hashBytes = ethers.utils.arrayify('0x' + recoveryData.hash)
+// Set up the wallet for sending and paying gas
+let sendingWallet = ethers.Wallet.fromMnemonic(mnemonic)
+// Connect this wallet to the provider
+let connectedSendingWallet = sendingWallet.connect(provider)
 
-wallet.signMessage(hashBytes).then((flatSig) => {
+// Prepare the hash for signing
+let hashBytes = ethers.utils.arrayify('0x' + recoveryData.hash)
+
+// Interface to interact with the contract
+const abi = JSON.parse(fs.readFileSync('ABI/IVBase.abi'))
+
+// Instantiate the contract with the sendingWallet
+const vWallet = new ethers.Contract(recoveryData.vWalletAddress, abi, connectedSendingWallet)
+
+// Sign the message with the signingWallet (async)
+signingWallet.signMessage(hashBytes).then((flatSig) => {
   let sig = ethers.utils.splitSignature(flatSig)
   console.log(sig.v, sig.r, sig.s)
-
-  let provider = new HDWalletProvider(mnemonic, 'https://kovan.infura.io/v3/50acc159b78a4261be428f5534707279')
-  let web3 = new Web3(provider)
-
-  let abi = JSON.parse(fs.readFileSync('ABI/IVBase.abi'))
-  let vWallet = new web3.eth.Contract(abi, recoveryData.vWalletAddress)
-  console.log('vW: ' + recoveryData.vWalletAddress)
 
   // Combine with Vesto signature
   let vArray = [recoveryData.vestoV, sig.v]
@@ -45,29 +52,24 @@ wallet.signMessage(hashBytes).then((flatSig) => {
   let nonceBytes = parseBytes(recoveryData.nonce)
 
   // Just to check we're talking to the contract...
-  vWallet.methods
-    .version()
-    .call()
+  vWallet.version()
     .then(o => console.log(o))
     .catch(e => console.log(e))
 
   // Get the balance...
-  vWallet.methods
-    .balanceOf('0x7d741e8199718b6dae9327ca0df3f1444ff965fa')
-    .call()
+  vWallet.balanceOf('0x7d741e8199718b6dae9327ca0df3f1444ff965fa')
     .then(o => console.log(o))
     .catch(e => console.log(e))
 
   // Recovery function
-  vWallet.methods
-    .setUserAddress(
+  let options = { gasPrice: 1000000000, gasLimit: 85000 };
+  vWallet.setUserAddress(
       recoveryData.newUserAddress,
       nonceBytes,
       vArray,
       rArray,
-      sArray
-    )
-    .send({from: '0x43A0e3D7bF73911a3FcCB92362B649De90750dF4'}) // address of first Metamask account
+      sArray,
+      options)
     .then(o => console.log(o))
     .catch(e => console.log('Problems: ' + e))
 })
