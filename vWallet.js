@@ -2,6 +2,8 @@
 const fs = require('fs')
 const { hdkey } = require('ethereumjs-wallet')
 const { ethers } = require('ethers')
+const elliptic = require('elliptic')
+
 
 // Set up access to Ethereum network
 const provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io/v3/50acc159b78a4261be428f5534707279')
@@ -10,6 +12,7 @@ const provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io/v
 const mnemonic = fs.readFileSync('seed/mnemonic.txt', 'utf8')
 
 // Type conversion
+// Seems all that's required is to prefix with 0x to get the abi to accept as bytes32
 const parseBytes = (hexString) => {
   return '0x' + hexString
 }
@@ -39,10 +42,24 @@ const abi = JSON.parse(fs.readFileSync('ABI/IVBase.abi'))
 // Instantiate the contract with the sendingWallet
 const vWallet = new ethers.Contract(recoveryData.vWalletAddress, abi, connectedSendingWallet)
 
-// Sign the message with the signingWallet (async)
+// Sign the message with elliptic
+// I think this signs without adding any Ethereum message prefix
+// Have left this in just for comparison of signatures; the values are not being used in the final call
+// My next port of call with this was to check the hash is being input correctly
+let ec = new elliptic.ec('secp256k1')
+let privKey = signingKey._hdkey.privateKey.toString('hex')
+let signature = ec.sign(parseBytes(recoveryData.hash), privKey, 'hex')
+console.log(signature)
+console.log("elliptic R:", signature.r.toString(16))
+console.log("elliptic S:", signature.s.toString(16))
+// 
+
+// Sign the message with ethers signingWallet (async)
+// I think this adds the Ethereum message prefix behind the scenes
+// Next port of call to check the inner workings
 signingWallet.signMessage(hashBytes).then((flatSig) => {
   let sig = ethers.utils.splitSignature(flatSig)
-  console.log(sig.v, sig.r, sig.s)
+  console.log('ethers v,r,s :',sig.v, sig.r, sig.s)
 
   // Combine with Vesto signature
   let vArray = [recoveryData.vestoV, sig.v]
